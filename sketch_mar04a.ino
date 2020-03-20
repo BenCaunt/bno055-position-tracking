@@ -51,6 +51,7 @@ void loop(void)
   //  bno.getEvent(&angVelData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
 
+  // ********** added by Ben Caunt ****** this is what I am refering to in the email ***
   // essentially only add the value if the change is actually signifcant 
   // i believe what is occuring is potentially a floating point precision error in addition to just the simple fact that inertial navigation doesnt like sitting still
   // while this fix is certain not very elegant, it appears to be somewhat functional
