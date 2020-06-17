@@ -5,37 +5,39 @@
 #include "RoboClaw.h"
 #include <Arduino.h>   // required before wiring_private.h
 #include "wiring_private.h" // pinPeripheral() function
-
-
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
 /*
- * Function Prototypes 
+*IMU stuff 
+*/
+/* Set the delay between fresh samples */
+#define BNO055_SAMPLERATE_DELAY_MS (100)
+// Check I2C device address and correct line below (by default address is 0x29 or 0x28)
+//                                   id, address
+Adafruit_BNO055 bno = Adafruit_BNO055(-1, 0x28);
+void setupIMU();
+/*
+ * Roboclaw Stuff 
  */
 void setMotorPowerTank(double leftPower, double rightPower);
-
-/*
- * Constants
- */
 const int ROBOCLAW_MAX_POWER = 128;
-
-/*
- * Adapt Digital PINS 11 and 10 to a UART Serial connection usinng SERCOM
- */
 Uart Serial2 (&sercom1, 11, 10, SERCOM_RX_PAD_0, UART_TX_PAD_2);
 void SERCOM1_Handler();
-
-/*
- * Create Roboclaw Objects 
- */
 RoboClaw roboclaw(&Serial1,10000);
 RoboClaw roboclaw2(&Serial2,10000);
 
 /*
- * Serial Address of Arduino
+ * Serial Address of UART devices 
  */
 #define roboClawSerialAddress 0x80
 
 
+
 void setup() {
+  Serial.begin(9600);
+  setupIMU();
   //Open roboclaw serial ports
   roboclaw.begin(38400);
   roboclaw2.begin(38400);
@@ -50,15 +52,12 @@ void setup() {
 
 void loop() {
 
+    
+  Serial.println(getRobotHeading());
   setMotorPowerTank(0.5,0.5);
-  delay(2000);
+  delay(500);
   setMotorPowerTank(0,0);
-  delay(2000);
-  setMotorPowerTank(-0.5,0.5);
-  delay(2000);
-  setMotorPowerTank(0,0);
-  delay(2000);
-
+  delay(500);
 }
 
 
@@ -122,4 +121,25 @@ double convertMotorPower(double power) {
 void SERCOM1_Handler()
 {
   Serial2.IrqHandler();
+}
+
+/*
+ * Function sets up IMU 
+ */
+void setupIMU() {
+ /* Initialise the sensor */
+  if(!bno.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+
+  delay(1000);
+}
+
+double getRobotHeading() {
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+
+  return euler.x();
 }
